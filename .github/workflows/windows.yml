@@ -1,0 +1,63 @@
+name: Codex++ Windows x64 build
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: fastaiapi-groups/CodexPlusPlus
+          ref: c1e9272752f97cb8ea8abea7075f6bc1ac0b3700
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build frontend
+        working-directory: apps/codex-plus-manager
+        run: |
+          npm ci
+          npm run check
+          npm run vite:build
+      - name: Build Windows client
+        run: |
+          cargo test -p codex-plus-core update:: --lib
+          cargo test -p codex-plus-core --test all updater::
+          cargo build --release -p codex-plus-core --example upgrade_state_probe
+          cargo build --release -p codex-plus-manager
+      - name: Package installer
+        shell: pwsh
+        run: |
+          choco install nsis -y --no-progress
+          $version = (Get-Content apps/codex-plus-manager/package.json | ConvertFrom-Json).version
+          New-Item -ItemType Directory -Force dist/windows/app | Out-Null
+          Copy-Item target/release/codex-plus-plus.exe dist/windows/app/
+          $makensis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
+          if (-not (Test-Path $makensis)) { throw 'NSIS compiler missing' }
+          Push-Location scripts/installer/windows
+          try {
+            & $makensis /INPUTCHARSET UTF8 "/DVERSION=$version" CodexPlusPlus.nsi
+            if ($LASTEXITCODE -ne 0) { throw 'Installer packaging failed' }
+          } finally { Pop-Location }
+      - name: Test real Windows install and overwrite upgrade
+        shell: pwsh
+        run: |
+          $installer = (Get-ChildItem dist/windows/*-setup.exe | Select-Object -First 1).FullName
+          $scriptPath = (Resolve-Path scripts/test-windows-upgrade.ps1).Path
+          $script = [IO.File]::ReadAllText($scriptPath).Replace('1.11.3', '1.11.5').Replace('9f9ee02dbdd80ad0b054f5ff7b6382089289ea88ab38963c1c32a6e05d660166', '2802ae625ab3e5beed305002552fe74e6bfc29669daf5c2b0f9321353611152f')
+          [IO.File]::WriteAllText($scriptPath, $script)
+          & $scriptPath -Installer $installer
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-upgrade-acceptance
+          path: ${{ runner.temp }}/fastaiapi-install-acceptance/result.json
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.signed_release && 'fastaiapi-windows-x64-signed' || 'fastaiapi-windows-x64-test-unsigned' }}
+          path: dist/windows/*-setup.exe
+          if-no-files-found: error
+          retention-days: 14

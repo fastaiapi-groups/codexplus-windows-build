@@ -31,7 +31,7 @@ jobs:
       - name: Build and verify Mac DMG
         run: |
           work="$(mktemp -d)"
-          mkdir "$work/mount" "$work/stage" dist/fastai-release
+          mkdir -p "$work/mount" "$work/stage" dist/fastai-release
           curl -fsS --retry 3 --max-time 240 -o "$work/previous.dmg" 'https://fastaiapi.cloud/fastaiapi/downloads/codexplus/2.6.2/fb6a9d367ea572528a27d3b071a13a01edf4123a0e9cb123b48639f95fc9c52f/CodexPlusPlus-2.6.2-macos-arm64.dmg'
           test "$(shasum -a 256 "$work/previous.dmg" | cut -d' ' -f1)" = fb6a9d367ea572528a27d3b071a13a01edf4123a0e9cb123b48639f95fc9c52f
           hdiutil attach -readonly -nobrowse -noautoopen -mountpoint "$work/mount" "$work/previous.dmg"

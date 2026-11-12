@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: fastaiapi-groups/CodexPlusPlus
-          ref: c1e9272752f97cb8ea8abea7075f6bc1ac0b3700
+          ref: 1b699f5aa931a37dccdf19b029e6665ff4950d6d
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:

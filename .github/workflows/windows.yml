@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: fastaiapi-groups/CodexPlusPlus
-          ref: 1b699f5aa931a37dccdf19b029e6665ff4950d6d
+          ref: c115820fd71c53c4c1c9d76b2bcff2c1c9e075d2
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -44,7 +44,7 @@ jobs:
         run: |
           $installer = (Get-ChildItem dist/windows/*-setup.exe | Select-Object -First 1).FullName
           $scriptPath = (Resolve-Path scripts/test-windows-upgrade.ps1).Path
-          $script = [IO.File]::ReadAllText($scriptPath).Replace('1.11.3', '1.11.5').Replace('9f9ee02dbdd80ad0b054f5ff7b6382089289ea88ab38963c1c32a6e05d660166', '2802ae625ab3e5beed305002552fe74e6bfc29669daf5c2b0f9321353611152f')
+          $script = [IO.File]::ReadAllText($scriptPath).Replace('1.11.3', '2.6.2').Replace('9f9ee02dbdd80ad0b054f5ff7b6382089289ea88ab38963c1c32a6e05d660166', 'b5b033747942d11c76816670823da3ad765a8cade93235af73868f5014d24c53')
           [IO.File]::WriteAllText($scriptPath, $script)
           & $scriptPath -Installer $installer
       - uses: actions/upload-artifact@v4
@@ -55,7 +55,7 @@ jobs:
           if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.signed_release && 'fastaiapi-windows-x64-signed' || 'fastaiapi-windows-x64-test-unsigned' }}
+          name: fastaiapi-windows-x64
           path: dist/windows/*-setup.exe
           if-no-files-found: error
           retention-days: 14

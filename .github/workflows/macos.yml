@@ -1,0 +1,54 @@
+name: Codex++ macOS ARM64 build
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-15
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '12.0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: fastaiapi-groups/CodexPlusPlus
+          ref: c115820fd71c53c4c1c9d76b2bcff2c1c9e075d2
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build frontend
+        working-directory: apps/codex-plus-manager
+        run: |
+          npm ci
+          npm run check
+          npm run vite:build
+      - name: Build macOS Apple silicon executable
+        run: |
+          test "$(uname -m)" = arm64
+          node scripts/release-meta.mjs check 2.6.3
+          cargo build --release --locked -p codex-plus-manager
+      - name: Build and verify Mac DMG
+        run: |
+          work="$(mktemp -d)"
+          mkdir "$work/mount" "$work/stage" dist/fastai-release
+          curl -fsS --retry 3 --max-time 240 -o "$work/previous.dmg" 'https://fastaiapi.cloud/fastaiapi/downloads/codexplus/2.6.2/fb6a9d367ea572528a27d3b071a13a01edf4123a0e9cb123b48639f95fc9c52f/CodexPlusPlus-2.6.2-macos-arm64.dmg'
+          test "$(shasum -a 256 "$work/previous.dmg" | cut -d' ' -f1)" = fb6a9d367ea572528a27d3b071a13a01edf4123a0e9cb123b48639f95fc9c52f
+          hdiutil attach -readonly -nobrowse -noautoopen -mountpoint "$work/mount" "$work/previous.dmg"
+          ditto "$work/mount/Codex++.app" "$work/stage/Codex++.app"
+          hdiutil detach "$work/mount"
+          app="$work/stage/Codex++.app"
+          cp target/release/codex-plus-plus "$app/Contents/MacOS/CodexPlusPlus"
+          /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 2.6.3' -c 'Set :CFBundleVersion 2.6.3' "$app/Contents/Info.plist"
+          test "$(lipo -archs "$app/Contents/MacOS/CodexPlusPlus")" = arm64
+          codesign --force --deep --sign - "$app"
+          codesign --verify --deep --strict "$app"
+          ln -s /Applications "$work/stage/Applications"
+          hdiutil create -volname 'FastAiAPI Codex++' -srcfolder "$work/stage" -format UDZO dist/fastai-release/CodexPlusPlus-2.6.3-macos-arm64.dmg
+          hdiutil verify dist/fastai-release/CodexPlusPlus-2.6.3-macos-arm64.dmg
+          shasum -a 256 dist/fastai-release/CodexPlusPlus-2.6.3-macos-arm64.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fastaiapi-macos-arm64
+          path: dist/fastai-release/CodexPlusPlus-2.6.3-macos-arm64.dmg
+          if-no-files-found: error

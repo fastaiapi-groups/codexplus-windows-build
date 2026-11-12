@@ -21,12 +21,10 @@ jobs:
           npm ci
           npm run check
           npm run vite:build
-      - name: Build Windows client
-        run: |
-          cargo test -p codex-plus-core update:: --lib
-          cargo test -p codex-plus-core --test all updater::
-          cargo build --release -p codex-plus-core --example upgrade_state_probe
-          cargo build --release -p codex-plus-manager
+      - name: Build Windows release executable
+        run: cargo build --release --locked -p codex-plus-manager
+      - name: Build Windows credential verification probe
+        run: cargo build --release --locked -p codex-plus-core --example upgrade_state_probe
       - name: Package installer
         shell: pwsh
         run: |

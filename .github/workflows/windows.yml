@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: fastaiapi-groups/CodexPlusPlus
-          ref: c115820fd71c53c4c1c9d76b2bcff2c1c9e075d2
+          ref: 0c135cf944792f0fdefb66ba385b7efe6a2fdd88
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -44,7 +44,7 @@ jobs:
         run: |
           $installer = (Get-ChildItem dist/windows/*-setup.exe | Select-Object -First 1).FullName
           $scriptPath = (Resolve-Path scripts/test-windows-upgrade.ps1).Path
-          $script = [IO.File]::ReadAllText($scriptPath).Replace('1.11.3', '2.6.2').Replace('9f9ee02dbdd80ad0b054f5ff7b6382089289ea88ab38963c1c32a6e05d660166', 'b5b033747942d11c76816670823da3ad765a8cade93235af73868f5014d24c53')
+          $script = [IO.File]::ReadAllText($scriptPath).Replace('1.11.3', '2.6.3').Replace('9f9ee02dbdd80ad0b054f5ff7b6382089289ea88ab38963c1c32a6e05d660166', '1516cecd92ab49a5e665e0de3f8814de239fcc297291bae715d759b90dadff6d')
           [IO.File]::WriteAllText($scriptPath, $script)
           & $scriptPath -Installer $installer
       - uses: actions/upload-artifact@v4
